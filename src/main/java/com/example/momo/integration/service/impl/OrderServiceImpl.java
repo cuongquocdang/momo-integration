@@ -1,0 +1,94 @@
+package com.example.momo.integration.service.impl;
+
+import com.example.momo.integration.dto.response.OrderResponse;
+import com.example.momo.integration.exception.ResourceNotFoundException;
+import com.example.momo.integration.service.OrderService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Formatter;
+import java.util.UUID;
+
+@Service
+@Slf4j
+public class OrderServiceImpl implements OrderService {
+
+    private static final String DEFAULT_DUMMY_ORDER_ID = "order-123";
+    private static final String DEFAULT_AMOUNT = "1000";
+    private static final String EMPTY = "";
+
+    private static final String HMAC_SHA256 = "HmacSHA256";
+
+    @Value("${momo.partnerCode}")
+    private String partnerCode;
+
+    @Value("${momo.accessKey}")
+    private String accessKey;
+
+    @Value("${momo.secretKey}")
+    private String secretKey;
+
+    @Override
+    public OrderResponse findOrderById(String id) {
+        if (!DEFAULT_DUMMY_ORDER_ID.equals(id)) {
+            log.info("Not found order by id {}.", id);
+            throw new ResourceNotFoundException(String.format("Not found order by id %s.", id));
+        }
+
+        final String extraData = EMPTY;
+        final String amount = DEFAULT_AMOUNT;
+        final String ipnUrl = "https://callback.url/notify";
+        final String orderId = UUID.randomUUID().toString();
+        final String orderInfo = "Developer is pay 1000 for ordering.";
+        final String redirectUrl = "https://momo.vn/return";
+        final String requestId = UUID.randomUUID().toString();
+        final String requestType = "captureMoMoWallet";
+
+        final String rawSignature = String.format("accessKey=%s&amount=%s&extraData=%s&ipnUrl=%s&orderId=%s&orderInfo=%s" +
+                        "&partnerCode=%s&redirectUrl=%s&requestId=%s&requestType=%s",
+                this.accessKey, amount, extraData, ipnUrl, orderId, orderInfo, this.partnerCode, redirectUrl, requestId, requestType);
+
+        return OrderResponse.builder()
+                .partnerCode(this.partnerCode)
+                .accessKey(this.accessKey)
+                .requestId(requestId)
+                .orderId(orderId)
+                .amount(amount)
+                .orderInfo(orderInfo)
+                .extraData(extraData)
+                .signature(generateSignature(rawSignature))
+                .redirectUrl(redirectUrl)
+                .ipnUrl(ipnUrl)
+                .requestType(requestType)
+                .build();
+    }
+
+    private String generateSignature(String rawData) {
+        try {
+            SecretKeySpec secretKeySpec = new SecretKeySpec(this.secretKey.getBytes(), HMAC_SHA256);
+            Mac mac = Mac.getInstance(HMAC_SHA256);
+            mac.init(secretKeySpec);
+            byte[] rawHmac = mac.doFinal(rawData.getBytes(StandardCharsets.UTF_8));
+            return toHexString(rawHmac);
+        } catch (NoSuchAlgorithmException | InvalidKeyException exception) {
+            exception.printStackTrace();
+        }
+        return EMPTY;
+    }
+
+    private static String toHexString(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        Formatter formatter = new Formatter(sb);
+        for (byte b : bytes) {
+            formatter.format("%02x", b);
+        }
+        return sb.toString();
+    }
+
+}
