@@ -43,16 +43,15 @@ public class OrderServiceImpl implements OrderService {
 
         final String extraData = EMPTY;
         final String amount = DEFAULT_AMOUNT;
-        final String ipnUrl = "https://callback.url/notify";
+        final String notifyUrl = "https://callback.url/notify";
         final String orderId = UUID.randomUUID().toString();
         final String orderInfo = "Developer is pay 1000 for ordering.";
-        final String redirectUrl = "https://momo.vn/return";
+        final String returnUrl = "https://momo.vn/return";
         final String requestId = UUID.randomUUID().toString();
-        final String requestType = "captureMoMoWallet";
 
-        final String rawSignature = String.format("accessKey=%s&amount=%s&extraData=%s&ipnUrl=%s&orderId=%s&orderInfo=%s" +
-                        "&partnerCode=%s&redirectUrl=%s&requestId=%s&requestType=%s",
-                this.accessKey, amount, extraData, ipnUrl, orderId, orderInfo, this.partnerCode, redirectUrl, requestId, requestType);
+        final String rawSignature = String.format("partnerCode=%s&accessKey=%s&requestId=%s&amount=%s&orderId=%s&orderInfo=%s" +
+                        "&returnUrl=%s&notifyUrl=%s&extraData=%s",
+                this.partnerCode, this.accessKey, requestId, amount, orderId, orderInfo, returnUrl, notifyUrl, extraData);
 
         return OrderResponse.builder()
                 .partnerCode(this.partnerCode)
@@ -63,9 +62,9 @@ public class OrderServiceImpl implements OrderService {
                 .orderInfo(orderInfo)
                 .extraData(extraData)
                 .signature(generateSignature(rawSignature))
-                .redirectUrl(redirectUrl)
-                .ipnUrl(ipnUrl)
-                .requestType(requestType)
+                .redirectUrl(returnUrl)
+                .ipnUrl(notifyUrl)
+                .requestType("captureMoMoWallet")
                 .build();
     }
 

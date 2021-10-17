@@ -41,8 +41,7 @@ public class MomoPaymentImpl implements PaymentService {
     @Override
     public PaymentResponse payment(PaymentRequest request) {
         log.info("Process in {} environment.", environment);
-        requestTransactionToMomo(request);
-        return new PaymentResponse();
+        return requestTransactionToMomo(request);
     }
 
     private PaymentResponse requestTransactionToMomo(PaymentRequest request) {
