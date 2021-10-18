@@ -20,16 +20,14 @@ import java.io.IOException;
 @Slf4j
 public class MomoPaymentImpl implements PaymentService {
 
-    @Value("${momo.environment}")
-    private String environment;
-
-    @Value("${momo.baseUrl}")
-    private String baseUrl;
-
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-
+    private static final int ERROR_CODE = 300;
     private final OkHttpClient okHttpClient;
     private final ObjectMapper objectMapper;
+    @Value("${momo.environment}")
+    private String environment;
+    @Value("${momo.baseUrl}")
+    private String baseUrl;
 
     @Autowired
     public MomoPaymentImpl(@Qualifier("okHttpClient") OkHttpClient okHttpClient,
@@ -53,6 +51,9 @@ public class MomoPaymentImpl implements PaymentService {
                     .post(requestBody)
                     .build();
             Response httpResponse = okHttpClient.newCall(httpRequest).execute();
+            if (httpResponse.code() >= ERROR_CODE) {
+                httpResponse.close();
+            }
             Assert.notNull(httpResponse.body(), "response is null!");
             final String responseJson = httpResponse.body().string();
             PaymentResponse response = objectMapper.readValue(responseJson, PaymentResponse.class);

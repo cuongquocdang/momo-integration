@@ -1,6 +1,8 @@
 package com.example.momo.integration.dto.response;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.http.HttpStatus;
 
 @Getter
